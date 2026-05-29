@@ -8,9 +8,11 @@
     "scheme": "languagemaster",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "bundleIdentifier": "com.abdelhadi.languagemaster",
       "icon": "./assets/expo.icon"
     },
     "android": {
+      "package": "com.abdelhadi.languagemaster",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
