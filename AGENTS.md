@@ -327,6 +327,8 @@ data/
 
 Lesson content should be typed.
 
+Do not introduce a database unless explicitly requested.
+
 ---
 
 ## store/
@@ -343,6 +345,8 @@ Use Zustand for:
 - app settings
 
 Use AsyncStorage persistence where needed.
+
+Use local state for temporary UI state.
 
 ---
 
@@ -362,15 +366,6 @@ lib/
 
 Never expose secret keys in the mobile app.
 
----
-
-## State Management Rules
-
-Use Zustand for global client state.
-
-Use local state for temporary UI state.
-
-Persist using AsyncStorage when needed.
 
 ---
 
@@ -416,29 +411,6 @@ Use Clerk for authentication.
 
 Do not build custom auth.
 
----
-
-## Lesson Content Rules
-
-Use hardcoded JSON/TS for lessons.
-
-Do not introduce a database unless explicitly requested.
-
----
-
-## Code Simplicity Rules
-
-Avoid overengineering.
-
-Refactor only when needed.
-
----
-
-## Component Creation Rule
-
-Only create reusable components when necessary.
-
-Ask if unsure.
 
 ---
 
@@ -460,27 +432,3 @@ Fix errors.
 Be concise.
 
 Explain what changed and how to test.
-
----
-
-## Important Constraints
-
-No database for this version.
-
-Use:
-
-- JSON for content
-- Zustand for state
-- AsyncStorage for persistence
-- backend only for secure operations
-
----
-
-## Final Reminder
-
-Before every feature implementation:
-
-- Read this file
-- Follow it strictly
-- Build clean, simple, teachable code
-- Replicate UI exactly when designs are provided
