@@ -3,3 +3,138 @@
 @import "tailwindcss/utilities.css";
 
 @import "nativewind/theme";
+
+/* ═══════════════════════════════════════════
+   Design System Theme
+   Extends Tailwind v4 with our brand tokens.
+   ═══════════════════════════════════════════ */
+
+@theme {
+  /* ── Font Family ─────────────────────── */
+  --font-regular: "Poppins-Regular", sans-serif;
+  --font-medium: "Poppins-Medium", sans-serif;
+  --font-semibold: "Poppins-SemiBold", sans-serif;
+  --font-bold: "Poppins-Bold", sans-serif;
+
+  /* ── Brand Colors ────────────────────── */
+  --color-brand-purple: #5238fc;
+  --color-brand-purple-dark: #5c3ff5;
+  --color-brand-purple-light: #7b63fc;
+
+  --color-blue: #4087fe;
+  --color-blue-dark: #3e85fd;
+
+  --color-green: #1dbb64;
+  --color-green-dark: #20bc67;
+
+  --color-orange: #fd8502;
+  --color-orange-dark: #fd7901;
+
+  --color-yellow: #fec104;
+
+  --color-red: #fd474a;
+
+  /* ── Text Colors ─────────────────────── */
+  --color-text-primary: #0a1334;
+  --color-text-secondary: #4a536b;
+  --color-text-tertiary: #6b7383;
+  --color-text-muted: #9599a9;
+
+  /* ── Surface Colors ──────────────────── */
+  --color-surface-primary: #fefefe;
+  --color-surface-secondary: #f4f4f8;
+  --color-surface-tertiary: #ecedf2;
+
+  /* ── Border Colors ───────────────────── */
+  --color-border: #e6e7eb;
+  --color-border-light: #d9dbe3;
+}
+
+/* ═══════════════════════════════════════════
+   Custom Utility Classes
+   ═══════════════════════════════════════════ */
+
+/* ── Typography Utilities ─────────────── */
+
+/* Heading 1 — Bold, 32px */
+@utility text-h1 {
+  font-family: var(--font-bold);
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+/* Heading 2 — Bold, 28px */
+@utility text-h2 {
+  font-family: var(--font-bold);
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+/* Heading 3 — SemiBold, 24px */
+@utility text-h3 {
+  font-family: var(--font-semibold);
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+/* Heading 4 — SemiBold, 20px */
+@utility text-h4 {
+  font-family: var(--font-semibold);
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+
+/* Body — Regular, 16px */
+@utility text-body {
+  font-family: var(--font-regular);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Body Small — Regular, 14px */
+@utility text-body-sm {
+  font-family: var(--font-regular);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Caption — Medium, 12px */
+@utility text-caption {
+  font-family: var(--font-medium);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+/* Button — Bold, 16px */
+@utility text-btn {
+  font-family: var(--font-bold);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+/* Button Large — Bold, 18px */
+@utility text-btn-lg {
+  font-family: var(--font-bold);
+  font-size: 1.125rem;
+  line-height: 1.2;
+}
+
+/* ── Layout Utilities ─────────────────── */
+
+/* Center content horizontally & vertically */
+@utility flex-center {
+  align-items: center;
+  justify-content: center;
+}
+
+/* Flex row with center alignment */
+@utility flex-row-center {
+  flex-direction: row;
+  align-items: center;
+}
+
+/* Standard card surface (bg + radius only; use NativeWind shadow-* for shadow) */
+@utility card-surface {
+  background-color: var(--color-surface-primary);
+  border-radius: 0.75rem;
+}
