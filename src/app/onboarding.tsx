@@ -1,20 +1,38 @@
-import { Image, View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { Image, View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
+import { useAuth } from "@clerk/expo";
 
 import { images } from "@/constants/images";
 
 /**
- * Render the onboarding screen with app branding, a mascot with multilingual speech bubbles, and a full-width "Get Started" button that navigates to the app root.
+ * Render the onboarding screen with app branding, a mascot with multilingual
+ * speech bubbles, and a full-width "Get Started" button that navigates to
+ * the sign-up screen.
  *
- * @returns A JSX element rendering the onboarding screen layout
+ * Redirects authenticated users to the home route.
  */
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { isSignedIn, isLoaded } = useAuth();
+
+  if (!isLoaded) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#FEFEFE" }}>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#5238FC" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (isSignedIn) {
+    return <Redirect href="/" />;
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FEFEFE" }}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between" }}
         showsVerticalScrollIndicator={false}
       >
