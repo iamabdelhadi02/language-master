@@ -4,6 +4,15 @@ import { useRouter } from "expo-router";
 
 import { images } from "@/constants/images";
 
+/**
+ * Render the app's welcome landing screen with branding, illustration, and navigation to onboarding.
+ *
+ * Renders a centered layout containing the app logo, a mascot illustration, a tagline, a primary
+ * "Get Started" button and a secondary "View Onboarding" link. Activating either control navigates
+ * to the onboarding route ("/onboarding").
+ *
+ * @returns The React element for the welcome/landing screen.
+ */
 export default function Index() {
   const router = useRouter();
 

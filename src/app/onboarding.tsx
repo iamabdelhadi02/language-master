@@ -4,6 +4,11 @@ import { useRouter } from "expo-router";
 
 import { images } from "@/constants/images";
 
+/**
+ * Render the onboarding screen with app branding, a mascot with multilingual speech bubbles, and a full-width "Get Started" button that navigates to the app root.
+ *
+ * @returns A JSX element rendering the onboarding screen layout
+ */
 export default function OnboardingScreen() {
   const router = useRouter();
 
