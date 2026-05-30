@@ -1,15 +1,38 @@
-import { Image, View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { Image, View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
+import { useAuth } from "@clerk/expo";
 
 import { images } from "@/constants/images";
 
+/**
+ * Render the onboarding screen with app branding, a mascot with multilingual
+ * speech bubbles, and a full-width "Get Started" button that navigates to
+ * the sign-up screen.
+ *
+ * Redirects authenticated users to the home route.
+ */
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { isSignedIn, isLoaded } = useAuth();
+
+  if (!isLoaded) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#FEFEFE" }}>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#5238FC" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (isSignedIn) {
+    return <Redirect href="/" />;
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FEFEFE" }}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between" }}
         showsVerticalScrollIndicator={false}
       >
@@ -88,7 +111,7 @@ export default function OnboardingScreen() {
           {/* ── Get Started Button ──────────────────── */}
           <View className="w-full px-2 mb-2">
             <TouchableOpacity
-              onPress={() => router.push("/")}
+              onPress={() => router.push("/(auth)/sign-up")}
               className="bg-brand-purple w-full rounded-2xl py-4 flex-row items-center justify-center relative shadow-lg"
               activeOpacity={0.85}
             >

@@ -1,5 +1,5 @@
-```
-Describe this onboarding screen image in exact detail so I can implement it pixel-perfectly in React Native (Expo + NativeWind). Output in this exact format — no intro, no commentary:
+```text
+Describe the attached image in exact detail so I can implement it pixel-perfectly in React Native (Expo + NativeWind). Output in this exact format — no intro, no commentary:
 
 ## Layout (top to bottom, numbered)
 For each element: type (text/image/button/indicator), content, exact positioning, width constraints
