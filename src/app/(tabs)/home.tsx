@@ -1,19 +1,19 @@
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useUser } from "@clerk/expo";
+import { usePostHog } from "posthog-react-native";
 
 import { useLearningStore } from "@/store/learning";
 import { getLanguage } from "@/data/languages";
 import { getUnitsForLanguage } from "@/data/units";
 import { getLessonsForLanguage } from "@/data/lessons";
-import { DAILY_XP_GOAL } from "@/constants/learning";
 import { HomeHeader } from "@/components/HomeHeader";
 import { DailyGoalCard } from "@/components/DailyGoalCard";
 import { ContinueLearningCard } from "@/components/ContinueLearningCard";
 import { TodaysPlanItem } from "@/components/TodaysPlanItem";
 import type { TodaysPlanItemData } from "@/components/TodaysPlanItem";
 import { NextUpCard } from "@/components/NextUpCard";
-import type { Unit, LessonProgress } from "@/types/learning";
+import type { Unit, Lesson, LessonProgress } from "@/types/learning";
 
 /** Map activity type to an emoji icon for today's plan items. */
 const ACTIVITY_ICON: Record<string, string> = {
@@ -33,21 +33,22 @@ const ACTIVITY_ICON: Record<string, string> = {
  * @param lesson - The lesson whose first activity's type will determine the icon
  * @returns An emoji character for the lesson's primary activity; `📚` if the activity type is missing or has no mapping
  */
-function getLessonIcon(
-  lesson: ReturnType<typeof getLessonsForLanguage>[number],
-): string {
+function getLessonIcon(lesson: Lesson): string {
   const firstType = lesson.activities[0]?.type;
   return firstType ? ACTIVITY_ICON[firstType] ?? "📚" : "📚";
 }
 
+
 /**
- * Selects the first unit that contains at least one lesson not marked as "completed".
+ * Returns the unit the user should be working on — the first unit
+ * with incomplete lessons, falling back to the first unit when all
+ * are complete.
  *
  * @param units - Ordered list of units to search
  * @param completedLessons - Mapping of lesson IDs to their progress objects
- * @returns The first unit that has at least one lesson whose progress `status` is not `"completed"`. If every unit's lessons are completed, returns `units[0]`. Returns `undefined` when `units` is empty.
+ * @returns The first unit with incomplete lessons, or the first unit if all lessons are complete. Returns `undefined` when `units` is empty.
  */
-function findFirstIncompleteUnit(
+function getCurrentUnit(
   units: Unit[],
   completedLessons: Record<string, LessonProgress>,
 ): Unit | undefined {
@@ -61,11 +62,33 @@ function findFirstIncompleteUnit(
 }
 
 /**
+ * Derive today's plan items (up to 3) from the current unit's lessons.
+ */
+function getTodayPlanItems(
+  currentUnit: Unit,
+  allLessons: Lesson[],
+  completedLessons: Record<string, LessonProgress>,
+): TodaysPlanItemData[] {
+  return allLessons
+    .filter((l) => l.unitId === currentUnit.id)
+    .slice(0, 3)
+    .map((lesson) => ({
+      lessonId: lesson.id,
+      title: lesson.title,
+      subtitle: lesson.description,
+      icon: getLessonIcon(lesson),
+      iconBgColor: currentUnit.color,
+      completed: completedLessons[lesson.id]?.status === "completed",
+    }));
+}
+
+/**
  * Home tab — main dashboard showing daily progress,
  * continue learning, today's plan, and next up.
  */
 export default function HomeScreen() {
   const { user } = useUser();
+  const posthog = usePostHog();
 
   const selectedLanguageCode = useLearningStore((s) => s.selectedLanguage);
   const totalXp = useLearningStore((s) => s.totalXp);
@@ -84,23 +107,10 @@ export default function HomeScreen() {
     ? getLessonsForLanguage(selectedLanguageCode)
     : [];
 
-  const currentUnit = findFirstIncompleteUnit(units, completedLessons);
+  const currentUnit = getCurrentUnit(units, completedLessons);
 
-  // Today's plan: up to 3 lessons from the first incomplete unit
-  const todayPlanItems: TodaysPlanItemData[] = (() => {
-    if (!currentUnit) return [];
-
-    return allLessons
-      .filter((l) => l.unitId === currentUnit.id)
-      .slice(0, 3)
-      .map((lesson) => ({
-        title: lesson.title,
-        subtitle: lesson.description,
-        icon: getLessonIcon(lesson),
-        iconBgColor: currentUnit.color,
-        completed: completedLessons[lesson.id]?.status === "completed",
-      }));
-  })();
+  const todayPlanItems: TodaysPlanItemData[] =
+    currentUnit ? getTodayPlanItems(currentUnit, allLessons, completedLessons) : [];
 
   // Next up: first incomplete lesson in the current unit
   const nextIncompleteLesson = currentUnit
@@ -116,6 +126,33 @@ export default function HomeScreen() {
   // ── Greeting ────────────────────────────────────────────────────────────
   const userName = user?.firstName ?? "Alex";
 
+  // ── Analytics handlers ──────────────────────────────────────────────────
+  const handleContinuePress = () => {
+    posthog.capture("continue_learning_tapped", {
+      language: selectedLanguageCode ?? "",
+      unit_title: currentUnit?.title ?? "",
+      unit_number: currentUnit?.order ?? 0,
+    });
+    // TODO: navigate to lesson
+  };
+
+  const handleTodayPlanItemPress = (item: TodaysPlanItemData) => {
+    posthog.capture("today_plan_item_tapped", {
+      lesson_title: item.title,
+      lesson_id: item.lessonId,
+      completed: item.completed,
+      language: selectedLanguageCode ?? "",
+    });
+    // TODO: navigate to lesson
+  };
+
+  const handleNextUpPress = () => {
+    posthog.capture("next_up_tapped", {
+      lesson_title: nextIncompleteLesson?.title ?? "",
+      language: selectedLanguageCode ?? "",
+    });
+    // TODO: navigate to AI video call
+  };
   if (!language) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: "#FEFEFE" }}>
@@ -150,7 +187,7 @@ export default function HomeScreen() {
       >
         {/* Daily Goal Card */}
         <View className="mt-4">
-          <DailyGoalCard currentXp={totalXp % DAILY_XP_GOAL} />
+          <DailyGoalCard currentXp={totalXp} />
         </View>
 
         {/* Continue Learning Card */}
@@ -159,9 +196,7 @@ export default function HomeScreen() {
             languageName={language.name}
             unitTitle={currentUnit?.title ?? ""}
             unitNumber={currentUnit?.order ?? 1}
-            onContinuePress={() => {
-              // TODO: navigate to lesson
-            }}
+            onContinuePress={handleContinuePress}
           />
         </View>
 
@@ -177,13 +212,11 @@ export default function HomeScreen() {
 
         {/* Today's Plan List */}
         {todayPlanItems.length > 0 ? (
-          todayPlanItems.map((item, i) => (
+          todayPlanItems.map((item) => (
             <TodaysPlanItem
-              key={i}
+              key={item.lessonId}
               item={item}
-              onPress={() => {
-                // TODO: navigate to lesson
-              }}
+              onPress={() => handleTodayPlanItemPress(item)}
             />
           ))
         ) : (
@@ -199,9 +232,7 @@ export default function HomeScreen() {
           <NextUpCard
             title="AI Video Call"
             subtitle={nextUpSubtitle}
-            onPress={() => {
-              // TODO: navigate to AI video call
-            }}
+            onPress={handleNextUpPress}
           />
         </View>
       </ScrollView>

@@ -15,6 +15,7 @@ import { Image } from "expo-image";
 import * as WebBrowser from "expo-web-browser";
 import { useSSO } from "@clerk/expo";
 import { useSignUp, useSignIn } from "@clerk/expo/legacy";
+import { usePostHog } from "posthog-react-native";
 
 import { images } from "@/constants/images";
 import {
@@ -142,6 +143,7 @@ const COPY = {
 
 export default function AuthScreen({ mode }: { mode: AuthMode }) {
   const router = useRouter();
+  const posthog = usePostHog();
 
   // ── Clerk hooks ────────────────────────────
   const { signUp, isLoaded: signUpLoaded } = useSignUp();
@@ -250,6 +252,8 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
         if (result.createdSessionId && setActive) {
           await setActive({ session: result.createdSessionId });
         }
+        posthog.identify(result.createdUserId ?? undefined);
+        posthog.capture("sign_up_completed", { method: "email" });
         router.replace("/");
       } catch (err: unknown) {
         setVerificationError(
@@ -257,7 +261,7 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
         );
       }
     },
-    [signUp, setActive, router],
+    [signUp, setActive, router, posthog],
   );
 
   // ── Verification: Sign In ──────────────────
@@ -280,6 +284,7 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
         if (result.createdSessionId && setActive) {
           await setActive({ session: result.createdSessionId });
         }
+        posthog.capture("sign_in_completed", { method: "email" });
         router.replace("/");
       } catch (err: unknown) {
         setVerificationError(
@@ -287,7 +292,7 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
         );
       }
     },
-    [signIn, setActive, router],
+    [signIn, setActive, router, posthog],
   );
 
   // ── Resend code handler ────────────────────
@@ -308,6 +313,8 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
   // ── Social auth handlers ───────────────────
   const handleSocialAuth = useCallback(
     async (strategy: "oauth_google" | "oauth_facebook" | "oauth_apple") => {
+      const provider = strategy.replace("oauth_", "") as "google" | "facebook" | "apple";
+      posthog.capture("social_auth_started", { provider, mode });
       try {
         const { createdSessionId, setActive: setSSOActive } =
           await startSSOFlow({
@@ -322,7 +329,7 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
         console.error(`OAuth ${strategy} error:`, clerkErrorMessage(err, ""));
       }
     },
-    [startSSOFlow, router],
+    [startSSOFlow, router, posthog, mode],
   );
 
   // ── Loading state ──────────────────────────

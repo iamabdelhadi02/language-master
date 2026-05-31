@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity } from "react-native";
 
 export type TodaysPlanItemData = {
+  lessonId: string;
   title: string;
   subtitle: string;
   icon: string;

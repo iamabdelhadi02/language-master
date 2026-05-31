@@ -2,6 +2,7 @@ import { useAuth, useClerk } from "@clerk/expo";
 import { Link, Redirect } from "expo-router";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { usePostHog } from "posthog-react-native";
 
 import { getLanguage } from "@/data/languages";
 import { useLearningStore } from "@/store/learning";
@@ -17,6 +18,7 @@ import { useLearningStore } from "@/store/learning";
 export default function Index() {
   const { isSignedIn, isLoaded } = useAuth();
   const { signOut } = useClerk();
+  const posthog = usePostHog();
   const selectedLanguageCode = useLearningStore((s) => s.selectedLanguage);
   const clearAll = useLearningStore((s) => s.clearAll);
 
@@ -75,7 +77,11 @@ export default function Index() {
 
         {/* Sign out */}
         <TouchableOpacity
-          onPress={() => signOut()}
+          onPress={() => {
+            posthog.capture("sign_out");
+            posthog.reset();
+            signOut();
+          }}
           activeOpacity={0.85}
           className="bg-red/10 px-8 py-3 rounded-2xl border border-red/20"
         >

@@ -81,12 +81,11 @@ export function TabBar({ state, navigation }: TabBarProps) {
             width: CIRCLE_SIZE,
             height: CIRCLE_SIZE,
             borderRadius: CIRCLE_SIZE / 2,
+            backgroundColor: "#5238FC",
           },
           circleStyle,
         ]}
-        className="bg-brand-purple"
       />
-
       {/* Tab items row */}
       <View className="flex-row pt-2">
         {state.routes.map((route, index) => {
