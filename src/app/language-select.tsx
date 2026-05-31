@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
+import { usePostHog } from "posthog-react-native";
 
 import { languages } from "@/data/languages";
 import { useLearningStore } from "@/store/learning";
@@ -26,6 +27,7 @@ import { cn } from "@/lib/cn";
 export default function LanguageSelectScreen() {
   const selectLanguage = useLearningStore((s) => s.selectLanguage);
   const savedLanguage = useLearningStore((s) => s.selectedLanguage);
+  const posthog = usePostHog();
 
   const [selected, setSelected] = useState<string | undefined>(
     savedLanguage,
@@ -42,6 +44,11 @@ export default function LanguageSelectScreen() {
 
   function handleConfirm() {
     if (!selected) return;
+    const lang = languages.find((l) => l.code === selected);
+    posthog.capture("language_selected", {
+      language_code: selected,
+      language_name: lang?.name,
+    });
     selectLanguage(selected);
     router.replace("/");
   }

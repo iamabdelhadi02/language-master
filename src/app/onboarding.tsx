@@ -2,6 +2,7 @@ import { Image, View, Text, TouchableOpacity, ScrollView, ActivityIndicator } fr
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Redirect, useRouter } from "expo-router";
 import { useAuth } from "@clerk/expo";
+import { usePostHog } from "posthog-react-native";
 
 import { images } from "@/constants/images";
 
@@ -15,6 +16,7 @@ import { images } from "@/constants/images";
 export default function OnboardingScreen() {
   const router = useRouter();
   const { isSignedIn, isLoaded } = useAuth();
+  const posthog = usePostHog();
 
   if (!isLoaded) {
     return (
@@ -111,7 +113,10 @@ export default function OnboardingScreen() {
           {/* ── Get Started Button ──────────────────── */}
           <View className="w-full px-2 mb-2">
             <TouchableOpacity
-              onPress={() => router.push("/(auth)/sign-up")}
+              onPress={() => {
+                posthog.capture("get_started_tapped");
+                router.push("/(auth)/sign-up");
+              }}
               className="bg-brand-purple w-full rounded-2xl py-4 flex-row items-center justify-center relative shadow-lg"
               activeOpacity={0.85}
             >

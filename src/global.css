@@ -44,8 +44,12 @@
   --color-surface-primary: #fefefe;
   --color-surface-secondary: #f4f4f8;
   --color-surface-tertiary: #ecedf2;
+  /* ── Card Tints ─────────────────────── */
+  --color-card-warm: #FFFDF7;
+  --color-card-mint: #F0FDF4;
 
   /* ── Border Colors ───────────────────── */
+
   --color-border: #e6e7eb;
   --color-border-light: #d9dbe3;
 }
