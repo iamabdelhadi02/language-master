@@ -16,7 +16,7 @@ export const frLessons: Lesson[] = [
     order: 1,
     durationMinutes: 5,
     xp: 20,
-    imageKey: "treasure",
+    imageKey: "palace",
     goals: [
       {
         title: "Learn basic nouns",
@@ -145,7 +145,7 @@ export const frLessons: Lesson[] = [
     order: 2,
     durationMinutes: 5,
     xp: 20,
-    imageKey: "treasure",
+    imageKey: "earth",
     goals: [
       {
         title: "Learn basic verbs",
@@ -282,7 +282,7 @@ export const frLessons: Lesson[] = [
     order: 1,
     durationMinutes: 5,
     xp: 20,
-    imageKey: "palace",
+    imageKey: "mascotWelcome",
     goals: [
       {
         title: "Say hello and goodbye",
@@ -410,7 +410,7 @@ export const frLessons: Lesson[] = [
     order: 2,
     durationMinutes: 5,
     xp: 25,
-    imageKey: "palace",
+    imageKey: "treasure",
     goals: [
       {
         title: "Introduce yourself",

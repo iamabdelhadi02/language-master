@@ -1,3 +1,5 @@
+import type { PostHogEventProperties } from "@posthog/core";
+
 import { ClerkProvider, useUser } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
 import { Stack, usePathname, useGlobalSearchParams } from "expo-router";
@@ -8,8 +10,19 @@ import { PostHogProvider } from "posthog-react-native";
 
 import { colors } from "@/theme";
 import { posthog } from "@/lib/posthog";
-
 import "../global.css";
+
+
+/** Pending PostHog captures to flush after user is identified. */
+type PendingCapture = { event: string; properties?: PostHogEventProperties };
+let pendingCaptures: PendingCapture[] = [];
+
+/** Enqueue a capture that will fire after `posthog.identify(user.id)` runs. */
+export function enqueueIdentifyCapture(event: string, properties?: PostHogEventProperties) {
+  pendingCaptures.push({ event, properties });
+}
+
+
 
 const fontAssets = {
   "Poppins-Regular": require("@/assets/fonts/Poppins-Regular.ttf"),
@@ -35,6 +48,11 @@ function AppShell() {
   useEffect(() => {
     if (user) {
       posthog.identify(user.id);
+      // Flush any captures that were deferred until identification
+      while (pendingCaptures.length > 0) {
+        const c = pendingCaptures.shift()!;
+        posthog.capture(c.event, c.properties);
+      }
     }
   }, [user]);
 

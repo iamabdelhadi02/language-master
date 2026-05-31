@@ -20,7 +20,16 @@ export function DailyGoalCard({ currentXp }: DailyGoalCardProps) {
   const progress = Math.min(currentXp / DAILY_XP_GOAL, 1);
 
   return (
-    <View className="mx-4 bg-card-warm rounded-3xl overflow-hidden">
+    <View
+      className="mx-4 bg-card-warm rounded-3xl overflow-hidden border border-orange/15"
+      style={{
+        shadowColor: "#FD8502",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 3,
+      }}
+    >
       <View className="flex-row items-center p-4">
         {/* Left: Text + Progress */}
         <View className="flex-1 mr-3">

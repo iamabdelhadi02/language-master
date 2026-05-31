@@ -2,8 +2,10 @@ import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useUser } from "@clerk/expo";
 import { usePostHog } from "posthog-react-native";
+import { router } from "expo-router";
 
 import { useLearningStore } from "@/store/learning";
+import { DAILY_XP_GOAL } from "@/constants/learning";
 import { getLanguage } from "@/data/languages";
 import { getUnitsForLanguage } from "@/data/units";
 import { getLessonsForLanguage } from "@/data/lessons";
@@ -95,6 +97,8 @@ export default function HomeScreen() {
   const streakDays = useLearningStore((s) => s.streakDays);
   const completedLessons = useLearningStore((s) => s.completedLessons);
 
+  // Clamp XP to daily goal until per-day tracking exists
+  const dailyXp = Math.min(totalXp, DAILY_XP_GOAL);
   const language = selectedLanguageCode
     ? getLanguage(selectedLanguageCode)
     : undefined;
@@ -185,13 +189,20 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingBottom: 24 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Welcome label */}
+        <View className="px-4 mt-4 mb-3">
+          <Text className="text-body-sm text-text-secondary font-medium">
+            👋 Welcome back, {userName}!
+          </Text>
+        </View>
+
         {/* Daily Goal Card */}
-        <View className="mt-4">
-          <DailyGoalCard currentXp={totalXp} />
+        <View>
+          <DailyGoalCard currentXp={dailyXp} />
         </View>
 
         {/* Continue Learning Card */}
-        <View className="mt-4">
+        <View className="mt-3">
           <ContinueLearningCard
             languageName={language.name}
             unitTitle={currentUnit?.title ?? ""}
@@ -201,15 +212,18 @@ export default function HomeScreen() {
         </View>
 
         {/* Today's Plan Header */}
-        <View className="flex-row items-center justify-between px-4 mt-6 mb-1">
+        <View className="flex-row items-center justify-between px-4 mt-5 mb-1">
           <Text className="text-h4 text-text-primary">Today&apos;s plan</Text>
-          <TouchableOpacity activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/learn")}
+            activeOpacity={0.7}
+          >
             <Text className="text-body-sm text-brand-purple font-semibold">
               View all
             </Text>
           </TouchableOpacity>
-        </View>
 
+        </View>
         {/* Today's Plan List */}
         {todayPlanItems.length > 0 ? (
           todayPlanItems.map((item) => (
@@ -228,7 +242,7 @@ export default function HomeScreen() {
         )}
 
         {/* Next Up Card */}
-        <View className="mt-4">
+        <View className="mt-3">
           <NextUpCard
             title="AI Video Call"
             subtitle={nextUpSubtitle}

@@ -16,6 +16,7 @@ import * as WebBrowser from "expo-web-browser";
 import { useSSO } from "@clerk/expo";
 import { useSignUp, useSignIn } from "@clerk/expo/legacy";
 import { usePostHog } from "posthog-react-native";
+import { enqueueIdentifyCapture } from "@/app/_layout";
 
 import { images } from "@/constants/images";
 import {
@@ -284,7 +285,7 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
         if (result.createdSessionId && setActive) {
           await setActive({ session: result.createdSessionId });
         }
-        posthog.capture("sign_in_completed", { method: "email" });
+        enqueueIdentifyCapture("sign_in_completed", { method: "email" });
         router.replace("/");
       } catch (err: unknown) {
         setVerificationError(
@@ -292,7 +293,7 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
         );
       }
     },
-    [signIn, setActive, router, posthog],
+    [signIn, setActive, router],
   );
 
   // ── Resend code handler ────────────────────
@@ -323,6 +324,7 @@ export default function AuthScreen({ mode }: { mode: AuthMode }) {
           });
         if (createdSessionId && setSSOActive) {
           await setSSOActive({ session: createdSessionId });
+          enqueueIdentifyCapture("social_auth_completed", { provider, mode });
           router.replace("/");
         }
       } catch (err: unknown) {
