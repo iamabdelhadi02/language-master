@@ -3,11 +3,11 @@ import { Tabs } from "expo-router";
 import { TabBar } from "@/components/TabBar";
 
 /**
- * Tab layout — custom tab bar with animated circle indicator.
+ * Render the app's tab-based navigation layout using a custom tab bar.
  *
- * Five tabs: Home, Learn, AI Teacher, Chat, Profile.
- * Each screen is a placeholder for now; the Home screen UI
- * will be implemented separately.
+ * Configures an Expo Router `Tabs` navigator with headers hidden and registers five tab routes: `home`, `learn`, `ai-teacher`, `chat`, and `profile`.
+ *
+ * @returns A JSX element that renders the configured `Tabs` navigator
  */
 export default function TabLayout() {
   return (

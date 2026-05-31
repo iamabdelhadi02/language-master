@@ -9,8 +9,12 @@ type DailyGoalCardProps = {
 };
 
 /**
- * Daily goal card — shows XP progress toward the daily goal
- * with a treasure chest illustration.
+ * Display a card summarizing the user's progress toward the daily XP goal.
+ *
+ * The progress bar is capped at 100% when `currentXp` is greater than or equal to `DAILY_XP_GOAL`.
+ *
+ * @param currentXp - The user's accumulated XP for the current day.
+ * @returns A React element representing the daily goal card.
  */
 export function DailyGoalCard({ currentXp }: DailyGoalCardProps) {
   const progress = Math.min(currentXp / DAILY_XP_GOAL, 1);

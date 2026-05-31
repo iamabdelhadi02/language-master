@@ -9,8 +9,13 @@ type NextUpCardProps = {
 };
 
 /**
- * Next Up card — green-tinted preview of the next activity
- * with an avatar and a video call button.
+ * Renders a mint-tinted "Next up" preview card with title, subtitle, an avatar, and a small video-call button.
+ *
+ * @param title - The main title shown prominently on the card
+ * @param subtitle - The secondary text shown below the title
+ * @param avatarUrl - Optional URI of the avatar image; when omitted a fallback emoji is shown
+ * @param onPress - Optional press handler invoked when the card is tapped
+ * @returns A JSX element representing the Next Up card
  */
 export function NextUpCard({
   title,

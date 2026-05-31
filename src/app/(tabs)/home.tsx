@@ -25,6 +25,14 @@ const ACTIVITY_ICON: Record<string, string> = {
   reading: "📖",
 };
 
+/**
+ * Selects an emoji icon representing a lesson's primary activity.
+ *
+ * Uses the lesson's first activity type to look up a corresponding emoji.
+ *
+ * @param lesson - The lesson whose first activity's type will determine the icon
+ * @returns An emoji character for the lesson's primary activity; `📚` if the activity type is missing or has no mapping
+ */
 function getLessonIcon(
   lesson: ReturnType<typeof getLessonsForLanguage>[number],
 ): string {
@@ -32,7 +40,13 @@ function getLessonIcon(
   return firstType ? ACTIVITY_ICON[firstType] ?? "📚" : "📚";
 }
 
-/** Find the first unit that has at least one incomplete lesson. */
+/**
+ * Selects the first unit that contains at least one lesson not marked as "completed".
+ *
+ * @param units - Ordered list of units to search
+ * @param completedLessons - Mapping of lesson IDs to their progress objects
+ * @returns The first unit that has at least one lesson whose progress `status` is not `"completed"`. If every unit's lessons are completed, returns `units[0]`. Returns `undefined` when `units` is empty.
+ */
 function findFirstIncompleteUnit(
   units: Unit[],
   completedLessons: Record<string, LessonProgress>,

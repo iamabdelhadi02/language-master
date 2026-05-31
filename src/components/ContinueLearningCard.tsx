@@ -12,8 +12,13 @@ type ContinueLearningCardProps = {
 };
 
 /**
- * Continue learning card — violet background with language info,
- * unit progress, and a palace illustration.
+ * Renders a "Continue learning" card showing the language, unit label, a Continue button, and a palace illustration.
+ *
+ * @param languageName - The display name of the language shown as the card title
+ * @param unitTitle - The title of the current unit shown in the unit line
+ * @param unitNumber - The unit number included in the unit line (rendered as `Unit {unitNumber}`)
+ * @param onContinuePress - Optional callback invoked when the "Continue" button is pressed
+ * @returns A view element representing the styled continue-learning card
  */
 export function ContinueLearningCard({
   languageName,

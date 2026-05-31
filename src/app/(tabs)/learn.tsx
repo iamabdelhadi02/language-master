@@ -2,7 +2,9 @@ import { View, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 /**
- * Learn tab — placeholder.
+ * Screen component that displays a centered placeholder for the Learn tab.
+ *
+ * @returns The Learn screen's UI as a React element containing a heading and a brief "coming soon" message.
  */
 export default function LearnScreen() {
   return (

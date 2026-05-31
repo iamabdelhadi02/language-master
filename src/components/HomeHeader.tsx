@@ -11,7 +11,13 @@ type HomeHeaderProps = {
 };
 
 /**
- * Home screen header — flag, greeting, streak, notification bell.
+ * Renders the home screen header with a circular flag avatar, a greeting, a streak indicator, and a notification bell.
+ *
+ * @param userName - User's display name shown in the greeting
+ * @param flag - Emoji or short text rendered inside the circular avatar
+ * @param streakDays - Number of consecutive days shown next to the streak icon
+ * @param onNotificationPress - Optional callback invoked when the notification bell is pressed
+ * @returns A React element containing the header layout
  */
 export function HomeHeader({
   userName,
