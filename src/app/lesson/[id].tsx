@@ -23,6 +23,15 @@ import {
   OnlineDot,
 } from "@/components/icons";
 
+/** Default greeting per language code when a lesson has no phrases. */
+const DEFAULT_GREETINGS: Record<string, { phrase: string; translation: string }> = {
+  es: { phrase: "¡Hola! ¿Cómo estás?", translation: "Hello! How are you?" },
+  fr: { phrase: "Bonjour ! Comment ça va ?", translation: "Hello! How are you?" },
+  de: { phrase: "Hallo! Wie geht's?", translation: "Hello! How are you?" },
+  ja: { phrase: "こんにちは！お元気ですか？", translation: "Hello! How are you?" },
+};
+const DEFAULT_GREETING = { phrase: "Hello! How are you?", translation: "Hello! How are you?" };
+
 /** Stats ratings drawn from lesson feedback (simulated for audio-only). */
 type StatRatings = "Excellent" | "Great" | "Good" | "Fair" | "NeedsWork";
 
@@ -69,6 +78,12 @@ export default function AudioLessonScreen() {
       vocabulary: ratings[(i + 2) % ratings.length],
     };
   }, [phraseIndex]);
+
+  // Language-aware fallback greeting
+  const defaultGreeting = useMemo(
+    () => (language ? DEFAULT_GREETINGS[language.code] : undefined) ?? DEFAULT_GREETING,
+    [language],
+  );
 
   // ── Handlers ──────────────────────────────────────────────────────────
 
@@ -391,10 +406,10 @@ export default function AudioLessonScreen() {
           >
             <TeacherSpeechBubble
               targetPhrase={
-                currentPhrase?.phrase ?? "¡Hola! ¿Cómo estás?"
+                currentPhrase?.phrase ?? defaultGreeting.phrase
               }
               translation={
-                currentPhrase?.translation ?? "Hello! How are you?"
+                currentPhrase?.translation ?? defaultGreeting.translation
               }
               onSpeakerPress={handleSpeakerPress}
             />
