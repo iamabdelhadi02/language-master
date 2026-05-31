@@ -1,7 +1,7 @@
-import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Redirect, Link } from "expo-router";
 import { useAuth, useClerk } from "@clerk/expo";
+import { Link, Redirect } from "expo-router";
+import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { getLanguage } from "@/data/languages";
 import { useLearningStore } from "@/store/learning";
@@ -51,13 +51,13 @@ export default function Index() {
         </Text>
 
         {/* Navigate to language selection */}
-        <Link href="/language-select" asChild>
+        <Link href="/(tabs)/home" asChild>
           <TouchableOpacity
             activeOpacity={0.85}
             className="bg-brand-purple/10 px-6 py-3 rounded-2xl border border-brand-purple/20 mb-3"
           >
             <Text className="text-body text-brand-purple font-medium">
-              Change language
+              Home
             </Text>
           </TouchableOpacity>
         </Link>
