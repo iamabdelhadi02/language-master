@@ -220,7 +220,7 @@ export default function LearnScreen() {
                         order={lesson.order}
                         unitColor={unit.color}
                         onPress={() =>
-                          router.push(`/lesson/${lesson.id}` as any)
+                          router.push({ pathname: "/lesson/[id]", params: { id: lesson.id } })
                         }
                       />
                     );
