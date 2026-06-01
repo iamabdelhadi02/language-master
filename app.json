@@ -13,6 +13,7 @@
     },
     "android": {
       "package": "com.abdelhadi.languagemaster",
+      "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -38,7 +39,23 @@
         }
       ],
       "@clerk/expo",
-      "expo-secure-store"
+      "expo-secure-store",
+      "@stream-io/video-react-native-sdk",
+      [
+        "@config-plugins/react-native-webrtc",
+        {
+          "cameraPermission": "$(PRODUCT_NAME) requires camera access to capture and transmit video",
+          "microphonePermission": "$(PRODUCT_NAME) requires microphone access to capture and transmit audio"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

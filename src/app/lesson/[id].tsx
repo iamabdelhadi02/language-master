@@ -1,8 +1,16 @@
 import { useState, useMemo, useCallback } from "react";
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
 import { Image } from "expo-image";
+import { useUser } from "@clerk/expo";
+import { StreamCall } from "@stream-io/video-react-native-sdk";
 
 import { getLesson } from "@/data/lessons";
 import { getUnit } from "@/data/units";
@@ -12,11 +20,12 @@ import { colors } from "@/theme/colors";
 import { spacing, borderRadius } from "@/theme/spacing";
 import { fontSize } from "@/theme/typography";
 import { TeacherSpeechBubble } from "@/components/TeacherSpeechBubble";
-import { AudioLessonControls } from "@/components/AudioLessonControls";
+import { StreamAudioControls } from "@/components/StreamAudioControls";
 import { LessonStatsCard } from "@/components/LessonStatsCard";
+import { useAudioCall } from "@/hooks/useAudioCall";
+import type { AudioCallStatus } from "@/hooks/useAudioCall";
 import {
   BackChevronIcon,
-  CameraIcon,
   SubtitlesIcon,
   BellIcon,
   TimerIcon,
@@ -35,32 +44,361 @@ const DEFAULT_GREETING = { phrase: "Hello! How are you?", translation: "Hello! H
 /** Stats ratings drawn from lesson feedback (simulated for audio-only). */
 type StatRatings = "Excellent" | "Great" | "Good" | "Fair" | "NeedsWork";
 
+// ─── Status metadata ─────────────────────────────────────────────────
+
+const STATUS_LABEL: Record<AudioCallStatus, string> = {
+  idle: "Preparing…",
+  creating: "Creating session…",
+  joining: "Connecting to AI Teacher…",
+  joined: "Connected",
+  reconnecting: "Reconnecting…",
+  ended: "Call ended",
+  error: "Connection error",
+};
+
+const STATUS_DESCRIPTION: Partial<Record<AudioCallStatus, string>> = {
+  creating: "Setting up your lesson session with the AI teacher.",
+  joining: "Establishing a secure audio connection.",
+  reconnecting: "Your network connection seems unstable. Hang tight…",
+};
+
+// ─── Sub-components ──────────────────────────────────────────────────
+
 /**
- * AI Teacher Audio Lesson screen.
+ * Full-screen overlay for loading and connecting states.
+ */
+function CallOverlay({
+  status,
+  error,
+  onRetry,
+  onGoBack,
+}: {
+  status: AudioCallStatus;
+  error: string | null;
+  onRetry: () => void;
+  onGoBack: () => void;
+}) {
+  const isError = status === "error";
+  const isEnded = status === "ended";
+
+  return (
+    <View
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(13, 12, 26, 0.92)",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 50,
+        padding: 32,
+      }}
+    >
+      {isEnded ? (
+        <>
+          <View
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: "#EF4444",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 16,
+            }}
+          >
+            <Text style={{ color: "white", fontSize: 28 }}>✓</Text>
+          </View>
+          <Text
+            style={{
+              color: "white",
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 8,
+            }}
+          >
+            {STATUS_LABEL.ended}
+          </Text>
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.6)",
+              fontSize: 14,
+              textAlign: "center",
+              marginBottom: 24,
+            }}
+          >
+            Your lesson session has ended. Great practice!
+          </Text>
+          <TouchableOpacity
+            onPress={onGoBack}
+            activeOpacity={0.7}
+            style={{
+              backgroundColor: "#5238FC",
+              paddingHorizontal: 32,
+              paddingVertical: 12,
+              borderRadius: 16,
+            }}
+            accessibilityLabel="Go back to lessons"
+            accessibilityRole="button"
+          >
+            <Text style={{ color: "white", fontWeight: "600", fontSize: 16 }}>
+              Back to lessons
+            </Text>
+          </TouchableOpacity>
+        </>
+      ) : isError ? (
+        <>
+          <View
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: "rgba(239, 68, 68, 0.15)",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 16,
+            }}
+          >
+            <Text style={{ color: "#EF4444", fontSize: 28 }}>!</Text>
+          </View>
+          <Text
+            style={{
+              color: "white",
+              fontSize: 20,
+              fontWeight: "700",
+              marginBottom: 8,
+            }}
+          >
+            {STATUS_LABEL.error}
+          </Text>
+          <Text
+            style={{
+              color: "rgba(255,255,255,0.6)",
+              fontSize: 14,
+              textAlign: "center",
+              marginBottom: 8,
+            }}
+          >
+            {error ?? "An unexpected error occurred."}
+          </Text>
+          <View
+            style={{ flexDirection: "row", gap: 12, marginTop: 16 }}
+          >
+            <TouchableOpacity
+              onPress={onRetry}
+              activeOpacity={0.7}
+              style={{
+                backgroundColor: "#5238FC",
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 16,
+              }}
+              accessibilityLabel="Retry connection"
+              accessibilityRole="button"
+            >
+              <Text
+                style={{ color: "white", fontWeight: "600", fontSize: 14 }}
+              >
+                Retry
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={onGoBack}
+              activeOpacity={0.7}
+              style={{
+                backgroundColor: "rgba(255,255,255,0.1)",
+                paddingHorizontal: 24,
+                paddingVertical: 12,
+                borderRadius: 16,
+              }}
+              accessibilityLabel="Go back to lessons"
+              accessibilityRole="button"
+            >
+              <Text
+                style={{ color: "rgba(255,255,255,0.7)", fontWeight: "600", fontSize: 14 }}
+              >
+                Go back
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      ) : (
+        <>
+          <ActivityIndicator size="large" color="#5238FC" />
+          <Text
+            style={{
+              color: "white",
+              fontSize: 18,
+              fontWeight: "600",
+              marginTop: 20,
+            }}
+          >
+            {STATUS_LABEL[status]}
+          </Text>
+          {STATUS_DESCRIPTION[status] && (
+            <Text
+              style={{
+                color: "rgba(255,255,255,0.5)",
+                fontSize: 14,
+                textAlign: "center",
+                marginTop: 8,
+              }}
+            >
+              {STATUS_DESCRIPTION[status]}
+            </Text>
+          )}
+        </>
+      )}
+    </View>
+  );
+}
+
+/**
+ * Small user-info badge shown when connected to the call.
+ */
+function UserInfoBadge({
+  userName,
+  userImage,
+  isMuted,
+  isConnecting,
+}: {
+  userName: string;
+  userImage?: string;
+  isMuted: boolean;
+  isConnecting: boolean;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: spacing.sm,
+        paddingHorizontal: spacing.lg,
+        gap: spacing.sm,
+      }}
+    >
+      {/* Avatar */}
+      <View
+        style={{
+          width: 28,
+          height: 28,
+          borderRadius: 14,
+          overflow: "hidden",
+          backgroundColor: "#1E1B4B",
+          borderWidth: 1,
+          borderColor: "rgba(255,255,255,0.2)",
+        }}
+      >
+        {userImage ? (
+          <Image
+            source={{ uri: userImage }}
+            style={{ width: 28, height: 28 }}
+            contentFit="cover"
+          />
+        ) : (
+          <View
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: "white", fontSize: 14, fontWeight: "700" }}>
+              {userName.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* Name */}
+      <Text
+        className="text-white/80 text-body-sm font-medium"
+        numberOfLines={1}
+        style={{ flexShrink: 1 }}
+      >
+        {userName}
+      </Text>
+
+      {/* Status dot */}
+      {isConnecting ? (
+        <ActivityIndicator size="small" color="#F59E0B" />
+      ) : isMuted ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <View
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              backgroundColor: "#EF4444",
+            }}
+          />
+          <Text style={{ color: "#EF4444", fontSize: 11, fontWeight: "600" }}>
+            Muted
+          </Text>
+        </View>
+      ) : (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <OnlineDot size={8} />
+          <Text style={{ color: "#22C55E", fontSize: 11, fontWeight: "600" }}>
+            Live
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ─── Main Screen ─────────────────────────────────────────────────────
+
+/**
+ * AI Teacher Audio Lesson screen with Stream audio call integration.
  *
  * Opens when the user taps a lesson from the Learn tab.
- * Displays the AI teacher mascot, speech bubble with lesson phrases,
- * audio call controls, lesson goals, and feedback stats.
+ * Automatically creates and joins a Stream audio call for the lesson.
  *
- * Audio-only experience — no real video calling.
- * Styled per Modern Dark (Cinema Mobile) from ui-ux-pro-max.
+ * States:
+ *  - idle/creating/joining → overlay with spinner and status message
+ *  - joined → full lesson UI with live Stream mic controls
+ *  - reconnecting → overlay with "Reconnecting…" message
+ *  - ended → overlay confirming call end, with back button
+ *  - error → overlay with error message, retry, and back button
  */
 export default function AudioLessonScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const lesson = id ? getLesson(id) : undefined;
   const unit = lesson ? getUnit(lesson.unitId) : undefined;
   const language = unit ? getLanguage(unit.languageCode) : undefined;
+  const { user: clerkUser } = useUser();
 
-  // Control toggle state
-  const [activeControls, setActiveControls] = useState<
-    Record<string, boolean>
-  >({
-    camera: true,
-    mic: true,
-    subtitles: true,
+  // ── Stream audio call ──────────────────────────────────────────────
+
+  const userId = clerkUser?.id ?? "";
+  const userName =
+    clerkUser?.fullName ??
+    clerkUser?.primaryEmailAddress?.emailAddress ??
+    "";
+
+  const {
+    call,
+    status,
+    error,
+    isMuted,
+    endCall,
+    retry,
+  } = useAudioCall({
+    lessonId: lesson?.id ?? "",
+    languageCode: language?.code ?? "",
+    lessonTitle: lesson?.title ?? "",
+    userId,
+    userName,
   });
 
-  // Current phrase index (cycles through lesson phrases)
+  // ── Local UI state ─────────────────────────────────────────────────
+
+  const [subtitlesOn, setSubtitlesOn] = useState(true);
   const [phraseIndex, setPhraseIndex] = useState(0);
 
   const currentPhrase = useMemo(() => {
@@ -79,19 +417,18 @@ export default function AudioLessonScreen() {
     };
   }, [phraseIndex]);
 
-  // Language-aware fallback greeting
   const defaultGreeting = useMemo(
     () => (language ? DEFAULT_GREETINGS[language.code] : undefined) ?? DEFAULT_GREETING,
     [language],
   );
 
-  // ── Handlers ──────────────────────────────────────────────────────────
+  // ── Handlers ───────────────────────────────────────────────────────
 
-  const handleToggle = useCallback((key: string) => {
-    setActiveControls((prev) => ({ ...prev, [key]: !prev[key] }));
-  }, []);
+  const handleEndCall = useCallback(async () => {
+    await endCall();
+  }, [endCall]);
 
-  const handleEndCall = useCallback(() => {
+  const handleGoBack = useCallback(() => {
     router.back();
   }, []);
 
@@ -99,7 +436,11 @@ export default function AudioLessonScreen() {
     setPhraseIndex((prev) => prev + 1);
   }, []);
 
-  // ── Not found ─────────────────────────────────────────────────────────
+  const toggleSubtitles = useCallback(() => {
+    setSubtitlesOn((prev) => !prev);
+  }, []);
+
+  // ── Not found ──────────────────────────────────────────────────────
 
   if (!lesson || !language) {
     return (
@@ -127,7 +468,13 @@ export default function AudioLessonScreen() {
     );
   }
 
-  return (
+  const showOverlay =
+    status === "creating" || status === "joining" ||
+    status === "reconnecting" || status === "ended" || status === "error";
+
+  // ── Main content ───────────────────────────────────────────────────
+
+  const mainContent = (
     <View style={{ flex: 1, backgroundColor: "#0D0C1A" }}>
       {/* Top ambient gradient — Modern Dark style */}
       <View
@@ -146,7 +493,7 @@ export default function AudioLessonScreen() {
       <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: 48 }}
+          contentContainerStyle={{ paddingBottom: spacing.lg }}
           showsVerticalScrollIndicator={false}
         >
           {/* ═══════════════════════════════════════════
@@ -164,7 +511,7 @@ export default function AudioLessonScreen() {
           >
             {/* Back button */}
             <TouchableOpacity
-              onPress={() => router.back()}
+              onPress={handleGoBack}
               activeOpacity={0.6}
               accessibilityLabel="Go back"
               accessibilityRole="button"
@@ -196,52 +543,81 @@ export default function AudioLessonScreen() {
                   marginTop: 2,
                 }}
               >
-                <OnlineDot size={8} />
-                <Text
-                  className="text-xs font-medium"
-                  style={{ marginLeft: 6, color: "#22C55E" }}
-                >
-                  Online
-                </Text>
+                {status === "joined" ? (
+                  <>
+                    {isMuted ? (
+                      <>
+                        <View
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: 4,
+                            backgroundColor: "#EF4444",
+                          }}
+                        />
+                        <Text
+                          className="text-xs font-medium"
+                          style={{ marginLeft: 6, color: "#EF4444" }}
+                        >
+                          Muted
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <OnlineDot size={8} />
+                        <Text
+                          className="text-xs font-medium"
+                          style={{ marginLeft: 6, color: "#22C55E" }}
+                        >
+                          Connected
+                        </Text>
+                      </>
+                    )}
+                  </>
+                ) : status === "reconnecting" ? (
+                  <>
+                    <ActivityIndicator size="small" color="#F59E0B" style={{ width: 8, height: 8 }} />
+                    <Text
+                      className="text-xs font-medium"
+                      style={{ marginLeft: 6, color: "#F59E0B" }}
+                    >
+                      Reconnecting…
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <ActivityIndicator size="small" color="#9CA3AF" style={{ width: 8, height: 8 }} />
+                    <Text
+                      className="text-xs font-medium"
+                      style={{ marginLeft: 6, color: "#9CA3AF" }}
+                    >
+                      Connecting…
+                    </Text>
+                  </>
+                )}
               </View>
             </View>
 
             {/* Right action buttons */}
             <View style={{ flexDirection: "row", gap: spacing.sm }}>
-              {/* Camera toggle */}
-              <TouchableOpacity
-                onPress={() => handleToggle("camera")}
-                activeOpacity={0.6}
-                accessibilityLabel={`Camera ${activeControls.camera ? "on" : "off"}, double-tap to toggle`}
-                accessibilityRole="button"
-                style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: borderRadius.full,
-                  backgroundColor: "rgba(255,255,255,0.12)",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <CameraIcon size={18} />
-              </TouchableOpacity>
-
               {/* Subtitles toggle */}
               <TouchableOpacity
-                onPress={() => handleToggle("subtitles")}
+                onPress={toggleSubtitles}
                 activeOpacity={0.6}
-                accessibilityLabel={`Subtitles ${activeControls.subtitles ? "on" : "off"}, double-tap to toggle`}
+                accessibilityLabel={`Subtitles ${subtitlesOn ? "on" : "off"}, double-tap to toggle`}
                 accessibilityRole="button"
                 style={{
                   width: 44,
                   height: 44,
                   borderRadius: borderRadius.full,
-                  backgroundColor: "rgba(255,255,255,0.12)",
+                  backgroundColor: subtitlesOn
+                    ? "rgba(255,255,255,0.15)"
+                    : "rgba(255,255,255,0.06)",
                   alignItems: "center",
                   justifyContent: "center",
                 }}
               >
-                <SubtitlesIcon size={18} />
+                <SubtitlesIcon size={18} color={subtitlesOn ? "#FFFFFF" : "rgba(255,255,255,0.4)"} />
               </TouchableOpacity>
 
               {/* Bell */}
@@ -264,7 +640,27 @@ export default function AudioLessonScreen() {
           </View>
 
           {/* ═══════════════════════════════════════════
-              Stage Area — 320px canvas matching HTML design exactly
+              User Info Bar (shown when connected)
+              ═══════════════════════════════════════════ */}
+          {status === "joined" && (
+            <UserInfoBadge
+              userName={userName || "You"}
+              userImage={clerkUser?.imageUrl}
+              isMuted={isMuted}
+              isConnecting={false}
+            />
+          )}
+          {(status === "joining" || status === "reconnecting") && (
+            <UserInfoBadge
+              userName={userName || "You"}
+              userImage={clerkUser?.imageUrl}
+              isMuted={isMuted}
+              isConnecting={true}
+            />
+          )}
+
+          {/* ═══════════════════════════════════════════
+              Stage Area — 320px canvas
               ═══════════════════════════════════════════ */}
           <View
             style={{
@@ -313,7 +709,7 @@ export default function AudioLessonScreen() {
               }}
             />
 
-            {/* Mascot — positioned at bottom center, matching HTML */}
+            {/* Mascot */}
             <View
               style={{
                 position: "absolute",
@@ -331,73 +727,6 @@ export default function AudioLessonScreen() {
               />
             </View>
 
-            {/* User video PIP (placeholder — audio-only) */}
-            <View style={{ position: "absolute", top: spacing.lg, right: spacing.lg }}>
-              <View
-                style={{
-                  width: 88,
-                  height: 118,
-                  borderRadius: borderRadius["2xl"],
-                  overflow: "hidden",
-                  borderWidth: 2,
-                  borderColor: "rgba(255,255,255,0.8)",
-                  shadowColor: "#000",
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.25,
-                  shadowRadius: 6,
-                  elevation: 5,
-                }}
-              >
-                <View
-                  style={{
-                    flex: 1,
-                    backgroundColor: "#1E1B4B",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Image
-                    source={images.mascotAuth}
-                    style={{ width: 50, height: 50, borderRadius: 25 }}
-                    contentFit="cover"
-                    accessibilityLabel="Your video preview"
-                  />
-                </View>
-
-                {/* "You" label */}
-                <View
-                  style={{
-                    position: "absolute",
-                    bottom: 6,
-                    left: 6,
-                    right: 6,
-                    backgroundColor: "rgba(0,0,0,0.5)",
-                    borderRadius: 6,
-                    paddingVertical: 2,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text className="text-white text-[10px] font-semibold">
-                    You
-                  </Text>
-                </View>
-
-                {/* Mic status dot */}
-                <View
-                  style={{
-                    position: "absolute",
-                    top: spacing.sm,
-                    right: spacing.sm,
-                    width: 10,
-                    height: 10,
-                    borderRadius: 5,
-                    borderWidth: 1,
-                    borderColor: "rgba(255,255,255,0.6)",
-                    backgroundColor: activeControls.mic ? "#22C55E" : "#EF4444",
-                  }}
-                />
-              </View>
-            </View>
           </View>
 
           {/* ═══════════════════════════════════════════
@@ -469,17 +798,6 @@ export default function AudioLessonScreen() {
           </View>
 
           {/* ═══════════════════════════════════════════
-              Audio Controls
-              ═══════════════════════════════════════════ */}
-          <View style={{ marginTop: spacing["3xl"] }}>
-            <AudioLessonControls
-              activeControls={activeControls}
-              onToggle={handleToggle}
-              onEndCall={handleEndCall}
-            />
-          </View>
-
-          {/* ═══════════════════════════════════════════
               Lesson Goals
               ═══════════════════════════════════════════ */}
           {lesson.goals.length > 0 && (
@@ -547,7 +865,204 @@ export default function AudioLessonScreen() {
             />
           </View>
         </ScrollView>
+
+        {/* ═══════════════════════════════════════════
+            User video PIP — floating over stage, outside scroll
+            ═══════════════════════════════════════════ */}
+        <View
+          style={{
+            position: "absolute",
+            top: 110,
+            right: spacing.lg,
+            zIndex: 10,
+          }}
+        >
+          <View
+            style={{
+              width: 88,
+              height: 118,
+              borderRadius: borderRadius["2xl"],
+              overflow: "hidden",
+              borderWidth: 2,
+              borderColor: status === "joined" && !isMuted
+                ? "rgba(34, 197, 94, 0.6)"
+                : "rgba(255,255,255,0.8)",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 6,
+              elevation: 5,
+            }}
+          >
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: "#1E1B4B",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {clerkUser?.imageUrl ? (
+                <Image
+                  source={{ uri: clerkUser.imageUrl }}
+                  style={{ width: 50, height: 50, borderRadius: 25 }}
+                  contentFit="cover"
+                  accessibilityLabel="Your profile picture"
+                />
+              ) : (
+                <Image
+                  source={images.mascotAuth}
+                  style={{ width: 50, height: 50, borderRadius: 25 }}
+                  contentFit="cover"
+                  accessibilityLabel="Your avatar"
+                />
+              )}
+            </View>
+
+            {/* "You" label */}
+            <View
+              style={{
+                position: "absolute",
+                bottom: 6,
+                left: 6,
+                right: 6,
+                backgroundColor: "rgba(0,0,0,0.5)",
+                borderRadius: 6,
+                paddingVertical: 2,
+                alignItems: "center",
+              }}
+            >
+              <Text className="text-white text-[10px] font-semibold">
+                {userName ? userName.split(" ")[0] : "You"}
+              </Text>
+            </View>
+
+            {/* Mic status dot */}
+            {status === "joined" && (
+              <View
+                style={{
+                  position: "absolute",
+                  top: spacing.sm,
+                  right: spacing.sm,
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  borderWidth: 1,
+                  borderColor: "rgba(255,255,255,0.6)",
+                  backgroundColor: isMuted ? "#EF4444" : "#22C55E",
+                }}
+              />
+            )}
+          </View>
+        </View>
+
+        {/* ═══════════════════════════════════════════
+            Audio Controls — Sticky bottom bar
+            ═══════════════════════════════════════════ */}
+        <View
+          style={{
+            paddingTop: spacing.md,
+            paddingBottom: spacing.lg,
+            backgroundColor: "#0D0C1A",
+          }}
+        >
+          {call && !showOverlay ? (
+            <StreamAudioControls onCallEnded={handleEndCall} />
+          ) : (
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-evenly",
+                alignItems: "flex-start",
+                paddingHorizontal: spacing.sm,
+              }}
+            >
+              <View style={{ alignItems: "center", width: 64, minHeight: 44 }}>
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: spacing.sm,
+                  }}
+                >
+                  <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
+                </View>
+                <Text className="text-caption font-medium text-center text-white/30">
+                  Mic
+                </Text>
+              </View>
+              <View style={{ alignItems: "center", width: 64, minHeight: 44 }}>
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    backgroundColor: "rgba(255,255,255,0.1)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: spacing.sm,
+                  }}
+                >
+                  <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
+                </View>
+                <Text className="text-caption font-medium text-center text-white/30">
+                  Speaker
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleGoBack}
+                activeOpacity={0.7}
+                accessibilityLabel="End call"
+                accessibilityRole="button"
+                style={{ alignItems: "center", width: 64, minHeight: 44 }}
+              >
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    backgroundColor: "#EF4444",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: spacing.sm,
+                  }}
+                >
+                  <BellIcon size={18} />
+                </View>
+                <Text className="text-caption font-medium text-center text-red">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </SafeAreaView>
+
+      {/* ═══════════════════════════════════════════
+          Status Overlay
+          ═══════════════════════════════════════════ */}
+      {showOverlay && (
+        <CallOverlay
+          status={status}
+          error={error}
+          onRetry={retry}
+          onGoBack={handleGoBack}
+        />
+      )}
     </View>
   );
+
+  // ── Wrap in StreamCall when we have a live call ────────────────────
+  // Always wrap when call exists so `useCall()` works in descendants.
+  // The overlay covers the UI during connecting/error states.
+
+  if (call) {
+    return <StreamCall call={call}>{mainContent}</StreamCall>;
+  }
+
+  return mainContent;
 }

@@ -7,9 +7,12 @@ import { StatusBar } from "expo-status-bar";
 import { useFonts } from "expo-font";
 import { useEffect, useRef } from "react";
 import { PostHogProvider } from "posthog-react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { colors } from "@/theme";
 import { posthog } from "@/lib/posthog";
+import { StreamVideoProvider } from "@/components/StreamVideoProvider";
 import "../global.css";
 
 
@@ -68,23 +71,25 @@ function AppShell() {
   }, [pathname, params]);
 
   return (
-    <PostHogProvider
-      client={posthog}
-      autocapture={{
-        captureScreens: false,
-        captureTouches: true,
-        propsToCapture: ["testID"],
-        maxElementsCaptured: 20,
-      }}
-    >
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.surface.primary },
-          animation: "slide_from_right",
+    <StreamVideoProvider>
+      <PostHogProvider
+        client={posthog}
+        autocapture={{
+          captureScreens: false,
+          captureTouches: true,
+          propsToCapture: ["testID"],
+          maxElementsCaptured: 20,
         }}
-      />
-    </PostHogProvider>
+      >
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.surface.primary },
+            animation: "slide_from_right",
+          }}
+        />
+      </PostHogProvider>
+    </StreamVideoProvider>
   );
 }
 
@@ -100,9 +105,13 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-      <StatusBar style="dark" />
-      <AppShell />
-    </ClerkProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+          <StatusBar style="dark" />
+          <AppShell />
+        </ClerkProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
