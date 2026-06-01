@@ -12,7 +12,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Image } from "expo-image";
-import * as WebBrowser from "expo-web-browser";
 import { useSSO } from "@clerk/expo";
 import { useSignUp, useSignIn } from "@clerk/expo/legacy";
 import { usePostHog } from "posthog-react-native";
@@ -25,7 +24,6 @@ import {
   VerificationModal,
 } from "@/components/AuthShared";
 
-WebBrowser.maybeCompleteAuthSession();
 
 /* ────────────────────────────────────────────
    Social Icon (consolidated)
