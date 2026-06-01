@@ -113,12 +113,15 @@ export function StreamVideoProvider({
     // Connecting to Stream Video — legitimate external system integration.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     connectStream();
+  }, [connectStream]);
+
+  // Disconnect the Stream client on unmount (not on every effect re-run,
+  // otherwise the singleton client is torn down while callers still hold it).
+  useEffect(() => {
     return () => {
       clientRef.current?.disconnectUser();
-      clientRef.current = null;
-      setClient(null);
     };
-  }, [connectStream]);
+  }, []);
 
   // ── Loading ─────────────────────────────────────────────────────────
 
