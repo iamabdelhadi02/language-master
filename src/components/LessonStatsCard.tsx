@@ -60,7 +60,7 @@ export function LessonStatsCard({
 
   return (
     <View
-      className="bg-white rounded-3xl mx-5 py-5 px-1 flex-row"
+      className="bg-white rounded-3xl mx-5 py-5 px-3 flex-row"
       style={{
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },

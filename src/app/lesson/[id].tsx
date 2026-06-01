@@ -158,7 +158,8 @@ export default function AudioLessonScreen() {
               alignItems: "center",
               justifyContent: "space-between",
               paddingHorizontal: spacing.lg,
-              paddingVertical: spacing.md,
+              paddingTop: spacing.sm,
+              paddingBottom: spacing.md,
             }}
           >
             {/* Back button */}
@@ -197,8 +198,8 @@ export default function AudioLessonScreen() {
               >
                 <OnlineDot size={8} />
                 <Text
-                  className="text-white/60 text-xs font-medium"
-                  style={{ marginLeft: 6 }}
+                  className="text-xs font-medium"
+                  style={{ marginLeft: 6, color: "#22C55E" }}
                 >
                   Online
                 </Text>
@@ -263,66 +264,71 @@ export default function AudioLessonScreen() {
           </View>
 
           {/* ═══════════════════════════════════════════
-              Stage Area
+              Stage Area — 320px canvas matching HTML design exactly
               ═══════════════════════════════════════════ */}
           <View
             style={{
               marginHorizontal: spacing.md,
               marginTop: spacing.sm,
+              height: 320,
               borderTopLeftRadius: borderRadius["3xl"],
               borderTopRightRadius: borderRadius["3xl"],
               overflow: "hidden",
+              backgroundColor: "#2A265C",
             }}
           >
-            {/* Stage background with atmospheric depth */}
-            <View style={{ backgroundColor: "#2A265C" }}>
-              {/* Decorative ambient blobs — Modern Dark */}
-              <View
-                style={{
-                  position: "absolute",
-                  top: 40,
-                  left: 40,
-                  width: 160,
-                  height: 160,
-                  borderRadius: 80,
-                  backgroundColor: "rgba(94, 106, 210, 0.35)",
-                }}
-              />
-              <View
-                style={{
-                  position: "absolute",
-                  bottom: 0,
-                  right: -30,
-                  width: 240,
-                  height: 240,
-                  borderRadius: 120,
-                  backgroundColor: "rgba(82, 56, 252, 0.25)",
-                }}
-              />
-              <View
-                style={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  width: 128,
-                  height: 128,
-                  borderRadius: 64,
-                  backgroundColor: "rgba(123, 99, 252, 0.2)",
-                  transform: [{ translateX: -64 }, { translateY: -64 }],
-                }}
-              />
+            {/* Decorative ambient blobs */}
+            <View
+              style={{
+                position: "absolute",
+                top: 40,
+                left: 40,
+                width: 160,
+                height: 160,
+                borderRadius: 80,
+                backgroundColor: "rgba(94, 106, 210, 0.35)",
+              }}
+            />
+            <View
+              style={{
+                position: "absolute",
+                bottom: 0,
+                right: -30,
+                width: 240,
+                height: 240,
+                borderRadius: 120,
+                backgroundColor: "rgba(82, 56, 252, 0.25)",
+              }}
+            />
+            <View
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                width: 128,
+                height: 128,
+                borderRadius: 64,
+                backgroundColor: "rgba(123, 99, 252, 0.2)",
+                transform: [{ translateX: -64 }, { translateY: -64 }],
+              }}
+            />
 
-              {/* Mascot */}
-              <View style={{ alignItems: "center", paddingTop: 40, paddingBottom: spacing.sm }}>
-                <View style={{ width: 176, height: 192, alignItems: "center", justifyContent: "center" }}>
-                  <Image
-                    source={images.mascotWelcome}
-                    style={{ width: 160, height: 180 }}
-                    contentFit="contain"
-                    accessibilityLabel="AI Teacher mascot"
-                  />
-                </View>
-              </View>
+            {/* Mascot — positioned at bottom center, matching HTML */}
+            <View
+              style={{
+                position: "absolute",
+                bottom: 8,
+                left: 0,
+                right: 0,
+                alignItems: "center",
+              }}
+            >
+              <Image
+                source={images.mascotWelcome}
+                style={{ width: 160, height: 180 }}
+                contentFit="contain"
+                accessibilityLabel="AI Teacher mascot"
+              />
             </View>
 
             {/* User video PIP (placeholder — audio-only) */}
