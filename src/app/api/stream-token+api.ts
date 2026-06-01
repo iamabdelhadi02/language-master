@@ -6,9 +6,10 @@ import { StreamClient } from "@stream-io/node-sdk";
  * Generates a Stream Video user token for the authenticated Clerk user.
  * The Stream API secret stays server-side — never exposed to the client.
  *
- * Production improvement: verify the Clerk session token from the request
- * header instead of accepting user_id as a query parameter. The backend
- * should derive the user identity from its own authenticated session.
+ * TODO: Verify the Clerk session token from the request header instead of
+ * accepting user_id as a query parameter. The backend should derive the user
+ * identity from its own authenticated session so tokens cannot be minted for
+ * arbitrary users. Reject unauthorized requests with 401/403.
  */
 export async function GET(request: Request): Promise<Response> {
   const { searchParams } = new URL(request.url);

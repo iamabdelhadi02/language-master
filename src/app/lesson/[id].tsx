@@ -440,6 +440,10 @@ export default function AudioLessonScreen() {
     setSubtitlesOn((prev) => !prev);
   }, []);
 
+  const handleNotificationsPress = useCallback(() => {
+    // TODO: implement notifications
+  }, []);
+
   // ── Not found ──────────────────────────────────────────────────────
 
   if (!lesson || !language) {
@@ -622,6 +626,7 @@ export default function AudioLessonScreen() {
 
               {/* Bell */}
               <TouchableOpacity
+                onPress={handleNotificationsPress}
                 activeOpacity={0.6}
                 accessibilityLabel="Notifications"
                 accessibilityRole="button"

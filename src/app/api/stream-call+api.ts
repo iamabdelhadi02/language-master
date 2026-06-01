@@ -9,6 +9,11 @@ import { StreamClient } from "@stream-io/node-sdk";
  *
  * Body: { userId, userName, lessonId, languageCode, lessonTitle }
  * Returns: { callType, callId }
+ *
+ * TODO: Verify the Clerk session token from the request header instead of
+ * accepting userId/userName from the request body. The backend should derive
+ * the user identity from its own authenticated session so users cannot
+ * impersonate each other when creating or joining calls.
  */
 export async function POST(request: Request): Promise<Response> {
   const apiKey = process.env.STREAM_API_KEY;

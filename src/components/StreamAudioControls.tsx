@@ -50,11 +50,11 @@ export function StreamAudioControls({
     if (!call || call.state.callingState === CallingState.LEFT) return;
     try {
       await call.leave();
+      onCallEnded?.();
+      router.back();
     } catch (err) {
       console.error("hangup error:", err);
     }
-    onCallEnded?.();
-    router.back();
   };
 
   // ── Controls ──────────────────────────────────────────────────────

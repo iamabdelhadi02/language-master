@@ -2,6 +2,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import { View, ActivityIndicator, Text } from "react-native";
 import { useUser } from "@clerk/expo";
@@ -58,6 +59,9 @@ export function StreamVideoProvider({
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
 
+  // Ref to access the latest client in the cleanup without adding it to deps
+  const clientRef = useRef<StreamVideoClient | null>(null);
+
   const userId = clerkUser?.id ?? "";
   const userName =
     clerkUser?.fullName ??
@@ -93,6 +97,7 @@ export function StreamVideoProvider({
         tokenProvider,
       });
 
+      clientRef.current = c;
       setClient(c);
     } catch (err) {
       const message =
@@ -109,6 +114,8 @@ export function StreamVideoProvider({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     connectStream();
     return () => {
+      clientRef.current?.disconnectUser();
+      clientRef.current = null;
       setClient(null);
     };
   }, [connectStream]);
