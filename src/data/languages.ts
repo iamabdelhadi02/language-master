@@ -49,6 +49,16 @@ export const languages: Language[] = [
     description:
       "The most widely spoken native language in Europe — precise, expressive, and rewarding to learn.",
   },
+  {
+    code: "ar",
+    name: "Arabic",
+    nativeName: "العربية",
+    flag: "🇸🇦",
+    imageKey: "palace",
+    learners: 27_400_000,
+    description:
+      "A beautiful, poetic language spoken across 22 countries — learn conversational Arabic through real dialogue.",
+  },
 ];
 
 /** Lookup a language by its code */
