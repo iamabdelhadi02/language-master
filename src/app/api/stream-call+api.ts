@@ -32,6 +32,7 @@ export async function POST(request: Request): Promise<Response> {
     userName?: string;
     lessonId?: string;
     languageCode?: string;
+    languageName?: string;
     lessonTitle?: string;
   };
 
@@ -44,7 +45,7 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const { userId, userName, lessonId, languageCode, lessonTitle } = body;
+  const { userId, userName, lessonId, languageCode, languageName, lessonTitle } = body;
 
   if (!userId || !lessonId) {
     return Response.json(
@@ -72,6 +73,7 @@ export async function POST(request: Request): Promise<Response> {
         custom: {
           lessonId,
           languageCode: languageCode ?? "",
+          languageName: languageName ?? "",
           lessonTitle: lessonTitle ?? "",
         },
         members: [
@@ -85,6 +87,44 @@ export async function POST(request: Request): Promise<Response> {
           audio: {
             mic_default_on: true,
             default_device: "speaker",
+          },
+          transcription: {
+            mode: "auto-on",
+            closed_caption_mode: "auto-on",
+            language: (languageCode as
+              | "en"
+              | "auto"
+              | "fr"
+              | "es"
+              | "de"
+              | "it"
+              | "nl"
+              | "pt"
+              | "pl"
+              | "ca"
+              | "cs"
+              | "da"
+              | "el"
+              | "fi"
+              | "id"
+              | "ja"
+              | "ru"
+              | "sv"
+              | "ta"
+              | "th"
+              | "tr"
+              | "hu"
+              | "ro"
+              | "zh"
+              | "ar"
+              | "tl"
+              | "he"
+              | "hi"
+              | "hr"
+              | "ko"
+              | "ms"
+              | "no"
+              | "uk") ?? "en",
           },
         },
       },

@@ -70,6 +70,7 @@ export interface StreamCallRequest {
   userName?: string;
   lessonId: string;
   languageCode?: string;
+  languageName?: string;
   lessonTitle?: string;
 }
 

@@ -6,6 +6,10 @@ import {
 } from "@stream-io/video-react-native-sdk";
 
 import { createStreamCall } from "@/lib/stream";
+import {
+  startVisionAgentSession,
+  stopVisionAgentSession,
+} from "@/lib/vision-agent";
 
 // ─── Status ───────────────────────────────────────────────────────────
 
@@ -47,6 +51,7 @@ function callingStateToStatus(
 export interface UseAudioCallParams {
   lessonId: string;
   languageCode: string;
+  languageName?: string;
   lessonTitle: string;
   userId: string;
   userName: string;
@@ -61,6 +66,8 @@ export interface UseAudioCallReturn {
   status: AudioCallStatus;
   /** Error message when status is "error". */
   error: string | null;
+  /** Error message if the vision agent failed to start. */
+  visionAgentError: string | null;
   /** Whether the local mic is muted. */
   isMuted: boolean;
   /** Toggle the local mic on/off. */
@@ -87,6 +94,7 @@ export interface UseAudioCallReturn {
 export function useAudioCall({
   lessonId,
   languageCode,
+  languageName,
   lessonTitle,
   userId,
   userName,
@@ -95,10 +103,15 @@ export function useAudioCall({
   const [call, setCall] = useState<Call | null>(null);
   const [status, setStatus] = useState<AudioCallStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [visionAgentError, setVisionAgentError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
 
   // Refs to prevent double-join and guard leave
   const hasJoined = useRef(false);
+  // Refs for vision agent lifecycle
+  const agentSessionId = useRef<string | null>(null);
+  const agentCallType = useRef<string>("default");
+  const agentCallId = useRef<string>("");
 
   // ── Bootstrap: create call + join ───────────────────────────────────
 
@@ -116,6 +129,7 @@ export function useAudioCall({
         userName,
         lessonId,
         languageCode,
+        languageName,
         lessonTitle,
       });
 
@@ -137,6 +151,45 @@ export function useAudioCall({
       setStatus("joining");
       await c.join({ create: true });
       hasJoined.current = true;
+
+      // 6. Start closed captions so the user sees real-time transcripts
+      //    of both their own speech and the AI teacher's responses.
+      try {
+        await c.startClosedCaptions();
+      } catch {
+        // Captions may have auto-started via call settings — safe to ignore.
+      }
+
+      // 7. Start the vision agent (AI teacher) on this call.
+      //    The agent joins the same Stream call and interacts with the user.
+      setVisionAgentError(null);
+      console.log(
+        `[useAudioCall] → starting vision agent for call ${callType}/${callId}`,
+      );
+      try {
+        const agentSession = await startVisionAgentSession({
+          callType,
+          callId,
+          languageName,
+          languageCode,
+          lessonTitle,
+          lessonId,
+        });
+        agentSessionId.current = agentSession.session_id;
+        agentCallType.current = callType;
+        agentCallId.current = callId;
+        console.log(
+          `useAudioCall: vision agent session ${agentSession.session_id} started on call ${callId}`,
+        );
+      } catch (agentErr) {
+        const agentMsg =
+          agentErr instanceof Error ? agentErr.message : "Unknown error";
+        console.error("useAudioCall: vision agent start failed:", agentMsg);
+        setVisionAgentError(
+          `AI teacher unavailable: ${agentMsg.includes("502") || agentMsg.includes("unreachable") ? "Vision agent server not running. Run: cd vision-agent && uv run main.py serve" : agentMsg}`,
+        );
+        // Continue without the agent — the user can still use the call.
+      }
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to join Stream call";
@@ -144,7 +197,7 @@ export function useAudioCall({
       setError(message);
       setStatus("error");
     }
-  }, [client, userId, userName, lessonId, languageCode, lessonTitle]);
+  }, [client, userId, userName, lessonId, languageCode, languageName, lessonTitle]);
 
   useEffect(() => {
     // Bootstrapping the call — legitimate external system integration.
@@ -152,6 +205,17 @@ export function useAudioCall({
     bootstrap();
 
     return () => {
+      // Cleanup: stop the vision agent
+      if (agentSessionId.current && agentCallId.current) {
+        stopVisionAgentSession({
+          callType: agentCallType.current,
+          callId: agentCallId.current,
+          sessionId: agentSessionId.current,
+        }).catch((err) =>
+          console.error("useAudioCall cleanup: vision agent stop error:", err),
+        );
+        agentSessionId.current = null;
+      }
       // Cleanup: leave the call on unmount
       if (call && call.state.callingState !== CallingState.LEFT) {
         call.leave().catch((err) =>
@@ -177,6 +241,20 @@ export function useAudioCall({
   // ── End call ────────────────────────────────────────────────────────
 
   const endCall = useCallback(async () => {
+    // Stop the vision agent first
+    if (agentSessionId.current && agentCallId.current) {
+      try {
+        await stopVisionAgentSession({
+          callType: agentCallType.current,
+          callId: agentCallId.current,
+          sessionId: agentSessionId.current,
+        });
+      } catch (err) {
+        console.error("useAudioCall: vision agent stop error:", err);
+      }
+      agentSessionId.current = null;
+    }
+
     if (!call || call.state.callingState === CallingState.LEFT) return;
     try {
       await call.leave();
@@ -200,6 +278,7 @@ export function useAudioCall({
     call,
     status,
     error,
+    visionAgentError,
     isMuted,
     toggleMute,
     endCall,
