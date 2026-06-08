@@ -13,12 +13,14 @@ import { esLessons } from "./lessons/es";
 import { frLessons } from "./lessons/fr";
 import { jaLessons } from "./lessons/ja";
 import { deLessons } from "./lessons/de";
+import { arLessons } from "./lessons/ar";
 
 export const lessons: Lesson[] = [
   ...esLessons,
   ...frLessons,
   ...jaLessons,
   ...deLessons,
+  ...arLessons,
 ];
 
 /** Get all lessons for a given unit, ordered. */

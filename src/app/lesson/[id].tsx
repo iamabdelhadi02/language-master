@@ -21,6 +21,7 @@ import { spacing, borderRadius } from "@/theme/spacing";
 import { fontSize } from "@/theme/typography";
 import { TeacherSpeechBubble } from "@/components/TeacherSpeechBubble";
 import { StreamAudioControls } from "@/components/StreamAudioControls";
+import { LiveCaptions } from "@/components/LiveCaptions";
 import { LessonStatsCard } from "@/components/LessonStatsCard";
 import { useAudioCall } from "@/hooks/useAudioCall";
 import type { AudioCallStatus } from "@/hooks/useAudioCall";
@@ -385,12 +386,14 @@ export default function AudioLessonScreen() {
     call,
     status,
     error,
+    visionAgentError,
     isMuted,
     endCall,
     retry,
   } = useAudioCall({
     lessonId: lesson?.id ?? "",
     languageCode: language?.code ?? "",
+    languageName: language?.name ?? "",
     lessonTitle: lesson?.title ?? "",
     userId,
     userName,
@@ -753,6 +756,37 @@ export default function AudioLessonScreen() {
               }
               onSpeakerPress={handleSpeakerPress}
             />
+          </View>
+
+          {/* ═══════════════════════════════════════════
+              Vision Agent Error Banner
+              ═══════════════════════════════════════════ */}
+          {visionAgentError && status === "joined" && (
+            <View
+              style={{
+                marginHorizontal: spacing.lg,
+                marginTop: spacing.lg,
+                padding: spacing.md,
+                borderRadius: borderRadius.lg,
+                backgroundColor: "rgba(239, 68, 68, 0.12)",
+                borderWidth: 1,
+                borderColor: "rgba(239, 68, 68, 0.3)",
+              }}
+            >
+              <Text
+                className="text-red text-body-sm font-medium"
+                style={{ lineHeight: 20 }}
+              >
+                {visionAgentError}
+              </Text>
+            </View>
+          )}
+
+          {/* ═══════════════════════════════════════════
+              Live Captions (teacher + user speech)
+              ═══════════════════════════════════════════ */}
+          <View style={{ marginTop: spacing.xl }}>
+            <LiveCaptions visible={subtitlesOn && status === "joined"} />
           </View>
 
           {/* ═══════════════════════════════════════════

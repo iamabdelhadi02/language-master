@@ -88,6 +88,26 @@ export const units: Unit[] = [
     color: "#1DBB64",
     lessonIds: ["de-greetings-hello", "de-greetings-intro"],
   },
+
+  // ── Arabic ───────────────────────────────────────────────────────────────
+  {
+    id: "ar-conversation-1",
+    languageCode: "ar",
+    title: "Conversation 1",
+    subtitle: "Open-ended Arabic conversation practice",
+    order: 1,
+    color: "#2E8B57",
+    lessonIds: ["ar-conversation-1-free", "ar-conversation-1-daily"],
+  },
+  {
+    id: "ar-conversation-2",
+    languageCode: "ar",
+    title: "Conversation 2",
+    subtitle: "Deeper topics and cultural exchanges",
+    order: 2,
+    color: "#DAA520",
+    lessonIds: ["ar-conversation-2-topics", "ar-conversation-2-culture"],
+  },
 ];
 
 /** Get all units for a language, ordered by `order`. */
