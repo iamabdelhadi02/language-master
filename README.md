@@ -1,56 +1,121 @@
-# Welcome to your Expo app 👋
+# 🦊 Linguia — AI Language Teacher App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> Your AI-powered language teacher for real conversations, personalized lessons, and immersive practice anywhere.
 
-## Get started
+---
 
-1. Install dependencies
+## ✨ Overview
 
-   ```bash
-   npm install
-   ```
+**Linguia** is a modern mobile language learning app built with **Expo (React Native)** that combines:
+- AI conversation practice
+- Voice-based learning
+- Structured lessons
+- Interactive onboarding
+- Multi-language support
 
-2. Start the app
+It simulates a real AI tutor experience with a friendly character guiding users through their learning journey.
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## 🚀 Features
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### 🧠 AI Language Teacher
+- Real-time AI conversation practice
+- Voice + text interaction
+- Instant feedback on speaking, pronunciation, and grammar
+- Gamified learning experience with a friendly AI character
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### 🎓 Structured Learning Paths
+- Beginner → Advanced lessons
+- Themed units (Greetings, Daily Life, Café, Travel, etc.)
+- Progress tracking per lesson
+- Locked/unlocked content system
 
-## Get a fresh project
+### 🌍 Multi-language Support
+- Spanish 🇪🇸
+- French 🇫🇷
+- Japanese 🇯🇵
+- Korean 🇰🇷
+- German 🇩🇪
+- Chinese 🇨🇳
+- Expandable language system
 
-When you're ready, run:
+### 🔐 Authentication System
+- Email & password signup
+- Google / Apple / Facebook login
+- Smooth onboarding flow
+
+### 📊 Progress Tracking
+- Speaking score
+- Pronunciation score
+- Grammar feedback
+- Lesson completion tracking
+
+---
+
+## 📱 App Flow
+
+### 🟣 Onboarding Experience
+Users are introduced to the app with a playful AI mascot and clear value proposition.
+
+![Onboarding](./lm-onboarding.png)
+
+---
+
+### 🔐 Authentication
+Simple and clean sign-up/login flow with multiple providers.
+
+![Auth Screen](./lm-auth.png)
+
+---
+
+### 🌍 Language Selection
+Users choose their target language from a curated list of popular languages.
+
+![Languages](./lm-languages.png)
+
+---
+
+### 📚 Learning Dashboard
+Structured lessons with progress tracking and unlockable content.
+
+![Lessons](./lm-lessons.png)
+
+---
+
+### 🦊 AI Teacher Experience
+Interactive AI tutor with voice feedback, subtitles, and performance evaluation.
+
+![AI Teacher](./lm-ai-teacher.png)
+
+---
+
+## 🧱 Tech Stack
+
+- **Expo / React Native**
+- **TypeScript**
+- **Supabase (Backend + Auth)**
+- **AI Voice Agent Integration**
+- **Expo Router (file-based routing)**
+- **PostHog (Analytics)**
+
+---
+
+## 🧠 Core Concept
+
+The app is designed around one principle:
+
+> **"Learn a language by actually speaking it with an AI, not memorizing it."**
+
+It replaces traditional flashcards with:
+- Real conversations
+- Context-based learning
+- Instant corrections
+
+---
+
+## 📦 Installation
 
 ```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+npm install
+npx expo start
